@@ -1,6 +1,6 @@
 def = {
     init: function(elevators, floors) {
-        self.hege_scope = {
+        self.injector_scope = {
             time: 0
         };
         var DEFAULT_ROLE = { type: "r_aid" };
@@ -75,7 +75,7 @@ def = {
                 // If a button has been pressed after a stop within a few seconds
                 // interpret it as the new man got inside pressed that,
                 // inherit it's wait time
-                if (self.hege_scope.time - el.myCollectedTimestamp < ELEVATOR_PRESS_MAX_DELAY) {
+                if (self.injector_scope.time - el.myCollectedTimestamp < ELEVATOR_PRESS_MAX_DELAY) {
                     wasPress = false;
                     for (i = 0; i < floorCount; i++) {
                         if (el.myPressed[i] && !el.myPressedLast[i]) {
@@ -84,7 +84,7 @@ def = {
                                 wasPress = true;
                             }
                             setTo = (i > cf) ? el.myCollectedTime_up : el.myCollectedTime_down;
-                            if (setTo < 0) setTo = self.hege_scope.time;
+                            if (setTo < 0) setTo = self.injector_scope.time;
                             el.myPressedTime[i] = setTo;
                         }
                     }
@@ -112,7 +112,7 @@ def = {
                                     console.warn('UnexpectedButtonPress');
                                     wasPress = true;
                                 }
-                                el.myPressedTime[i] = self.hege_scope.time;
+                                el.myPressedTime[i] = self.injector_scope.time;
                             }
                         }
                     }
@@ -170,9 +170,10 @@ def = {
                 for (var i = 0; i < floorCount; i++) {
                     if (el.myPressed[i] && ((timeUpperBound === undefined) || (el.myPressedTime[i] < timeUpperBound))) {
                         res = i;
-                        timeUpperBound = el.myPressedTime;
+                        timeUpperBound = el.myPressedTime[i];
                     }
                 }
+                console.log(res);
                 return (res >= 0) ? { floorNum: res, time: timeUpperBound } : null;
             };
 
@@ -335,7 +336,7 @@ def = {
                 // console.log("[" + index + "] stpd: " + fn + "(" + el.dir + ")");
                 var floor = floors[fn];
                 el.myCollectedNew = (floor.myfButton_up && el.goingUpIndicator()) || (floor.myfButton_down && el.goingDownIndicator());
-                el.myCollectedTimestamp = self.hege_scope.time;
+                el.myCollectedTimestamp = self.injector_scope.time;
                 el.myCollectedTime_up = floor.myfButton_up ? floor.myfButtonTime_up : -1;
                 el.myCollectedTime_down = floor.myfButton_down ? floor.myfButtonTime_down : -1;
                 // el.myPressed[fn] = false;
@@ -343,7 +344,7 @@ def = {
                     if (el.myIndicator(dir)) {
                         floor.myButton(dir, false);
                         floor.myTargeted(dir, 0);
-                        floor.myLastVisited(dir, self.hege_scope.time);
+                        floor.myLastVisited(dir, self.injector_scope.time);
                     }
                 }
             });
@@ -365,7 +366,7 @@ def = {
                 return fl.myDirval("myfButtonTime_", dir, val);
             };
             fl.myButtonDelta = function(dir) {
-                return self.hege_scope.time - fl.myButtonTime(dir);
+                return self.injector_scope.time - fl.myButtonTime(dir);
             };
             fl.myTargeted = function(dir, val) {
                 return fl.myDirval("myfTargeted_", dir, val);
@@ -383,16 +384,16 @@ def = {
             fl.myfLastVisited_down = -1e9;
             fl.on('up_button_pressed', function () {
                 if (!fl.myfButton_up) {
-                    if ((self.hege_scope.time - fl.myfLastVisited_up) > PRESS_AGAIN_DELTA) {
-                        fl.myfButtonTime_up = self.hege_scope.time;
+                    if ((self.injector_scope.time - fl.myfLastVisited_up) > PRESS_AGAIN_DELTA) {
+                        fl.myfButtonTime_up = self.injector_scope.time;
                     }
                 }
                 fl.myfButton_up = true;
             });
             fl.on('down_button_pressed', function () {
                 if (!fl.myfButton_down) {
-                    if ((self.hege_scope.time - fl.myfLastVisited_down) > PRESS_AGAIN_DELTA) {
-                        fl.myfButtonTime_down = self.hege_scope.time;
+                    if ((self.injector_scope.time - fl.myfLastVisited_down) > PRESS_AGAIN_DELTA) {
+                        fl.myfButtonTime_down = self.injector_scope.time;
                     }
                 }
                 fl.myfButton_down = true;
@@ -400,13 +401,13 @@ def = {
         });
     },
     update: function(dt, elevators, floors) {
-        self.hege_scope.time += dt;
+        self.injector_scope.time += dt;
         elevators.forEach(function(el) {
             el.myUpdateIndicators();
             el.myPullPressed();
-            var tag = '', time = self.hege_scope;
+            var tag = '', time = self.injector_scope;
             el.getPressedFloors().reverse().forEach(function(fn) {
-               tag += '' + fn + ': ' + (self.hege_scope.time - el.myPressedTime[fn]).toFixed(2) + '\n';
+               tag += '' + fn + ': ' + (self.injector_scope.time - el.myPressedTime[fn]).toFixed(1) + '\n';
             });
             el.$$tag = tag;
         });
