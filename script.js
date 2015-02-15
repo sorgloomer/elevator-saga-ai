@@ -6,18 +6,25 @@ def = {
         var DEFAULT_ROLE = { type: "r_aid" };
         var PRESS_AGAIN_DELTA = 0.5;
         var ELEVATOR_PRESS_MAX_DELAY = 2.0;
-        var ELEVATOR_ROLES = [
+        var ELEVATOR_ROLES_DEF = [];
+        var ELEVATOR_ROLES_L13 = [
+            { type: "r_aid", home: { dir: 1, floorNum: 0 }, switch_off_indicator_factor: 0.4 },
+            { type: "r_aid", home: { dir: 0, floorNum: 1 }, switch_off_indicator_factor: 0.4 },
+            { type: "r_aid", home: { dir: 0, floorNum: 3 }, switch_off_indicator_factor: 0.4 },
+            { type: "r_aid", home: { dir: 0, floorNum: 5 }, switch_off_indicator_factor: 0.4 },
+            { type: "r_aid", home: { dir: 0, floorNum: 7 }, switch_off_indicator_factor: 0.4 }
         ];
-        /*
-         [
+        var ELEVATOR_ROLES = ELEVATOR_ROLES_L13;
+        /* EXAMPLES:
+         { type: "r_aid", home: { dir: -1, floorNum: 7 } },
+         { type: "r_aid", floorNums: [0, 6, 7, 8] },
          { type: "r_upstream", always_indicate_down: true },
          { type: "r_general", always_indicate_up: true },
          { type: "r_general" },
          { type: "r_upstream" },
          { type: "r_aid" },
          { type: "r_aid", prefer_outbound: true },
-         { type: "r_aid", switch_off_indicator_factor: 0.5 }
-         ];
+         { type: "r_aid", switch_off_indicator_factor: 0.5 },
          */
         var MAX_UPSTREAM_DOWN_COLLECT_FLOOR = Math.floor(floors.length / 2);
 
@@ -161,9 +168,12 @@ def = {
                 el.myDir((el.myfDir > 0) ? -1 : 1);
             };
 
+            function contains(arr, val) {
+                return arr && (arr.indexOf(val) >= 0);
+            }
             el.myShallPickup = function(i, dir) {
                 var floor = floors[i];
-                return !el.myIsFull() && floor.myButton(dir) && !floor.myTargeted(dir);
+                return !el.myIsFull() && floor.myButton(dir) && !floor.myTargeted(dir) && contains(el.myRole.floorNums, i);
             };
             var EPSILON = 0.1;
             el.myOldestPressed = function(timeUpperBound) {
@@ -196,20 +206,25 @@ def = {
                 return (res >= 0) ? { floorNum: res, time: timeUpperBound } : null;
             };
 
-            function longestWaiting(dir) {
+            function undefinedOrContains(arr, val) {
+                return !arr || (arr.indexOf(val) >= 0);
+            }
+            function longestWaiting(dir, floorNums) {
                 var up = (dir >= 0), down = (dir <= 0);
                 var res = -1, resTime = 1e9, resDir = 0;
                 for (var i = 0; i < floors.length; i++) {
-                    var floor = floors[i];
-                    if (up && floor.myfButton_up && !floor.myfTargeted_up && (floor.myfButtonTime_up < resTime)) {
-                        resTime = floor.myfButtonTime_up;
-                        res = i;
-                        resDir = 1;
-                    }
-                    if (down && floor.myfButton_down && !floor.myfTargeted_down && (floor.myfButtonTime_down < resTime)) {
-                        resTime = floor.myfButtonTime_down;
-                        res = i;
-                        resDir = -1;
+                    if (undefinedOrContains(floorNums, i)) {
+                        var floor = floors[i];
+                        if (up && floor.myfButton_up && !floor.myfTargeted_up && (floor.myfButtonTime_up < resTime)) {
+                            resTime = floor.myfButtonTime_up;
+                            res = i;
+                            resDir = 1;
+                        }
+                        if (down && floor.myfButton_down && !floor.myfTargeted_down && (floor.myfButtonTime_down < resTime)) {
+                            resTime = floor.myfButtonTime_down;
+                            res = i;
+                            resDir = -1;
+                        }
                     }
                 }
                 return (res >= 0) ? {
@@ -239,8 +254,14 @@ def = {
                     return [terminalFloor(-el.myfDir)];
                 },
                 r_aid: function(el, cf) {
-                    el.myDir(1);
-                    return [0];
+                    var home = el.myRole.home;
+                    if (home) {
+                        el.myDir(home.dir);
+                        return [home.floorNum];
+                    } else {
+                        el.myDir(1);
+                        return [0];
+                    }
                 },
                 r_upstream: function(el, cf) {
                     return null;
@@ -264,7 +285,7 @@ def = {
                         }
                     }
                     if (!plan) {
-                        var longestWaitingResult = longestWaiting(0);
+                        var longestWaitingResult = longestWaiting(0, el.myRole.floorNums);
                         if (longestWaitingResult) {
                             var myOldestPressedResult = el.myOldestPressed(longestWaitingResult.time);
                             if (myOldestPressedResult) {
