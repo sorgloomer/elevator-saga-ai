@@ -14,7 +14,14 @@ def = {
             { type: "r_aid", home: { dir: 0, floorNum: 5 }, switch_off_indicator_factor: 0.4 },
             { type: "r_aid", home: { dir: 0, floorNum: 7 }, switch_off_indicator_factor: 0.4 }
         ];
-        var ELEVATOR_ROLES = ELEVATOR_ROLES_L13;
+        var ELEVATOR_ROLES_L17 = [
+            { type: "r_general" },
+            { type: "r_general" },
+            { type: "r_upstream", always_indicate_down: true },
+            { type: "r_upstream", always_indicate_down: true },
+            { type: "r_upstream", always_indicate_down: true }
+        ];
+        var ELEVATOR_ROLES = ELEVATOR_ROLES_L17;
         /* EXAMPLES:
          { type: "r_aid", home: { dir: -1, floorNum: 7 } },
          { type: "r_aid", floorNums: [0, 6, 7, 8] },
@@ -49,6 +56,9 @@ def = {
         function array_copy(src, dst) {
             for (var i = 0; i < src.length; i++) dst[i] = src[i];
             return dst;
+        }
+        function undefinedOrContains(arr, val) {
+            return !arr || (arr.indexOf(val) >= 0);
         }
 
         function arrayOfFloorsSize(v) {
@@ -168,12 +178,9 @@ def = {
                 el.myDir((el.myfDir > 0) ? -1 : 1);
             };
 
-            function contains(arr, val) {
-                return arr && (arr.indexOf(val) >= 0);
-            }
             el.myShallPickup = function(i, dir) {
                 var floor = floors[i];
-                return !el.myIsFull() && floor.myButton(dir) && !floor.myTargeted(dir) && contains(el.myRole.floorNums, i);
+                return !el.myIsFull() && floor.myButton(dir) && !floor.myTargeted(dir) && undefinedOrContains(el.myRole.floorNums, i);
             };
             var EPSILON = 0.1;
             el.myOldestPressed = function(timeUpperBound) {
@@ -206,9 +213,6 @@ def = {
                 return (res >= 0) ? { floorNum: res, time: timeUpperBound } : null;
             };
 
-            function undefinedOrContains(arr, val) {
-                return !arr || (arr.indexOf(val) >= 0);
-            }
             function longestWaiting(dir, floorNums) {
                 var up = (dir >= 0), down = (dir <= 0);
                 var res = -1, resTime = 1e9, resDir = 0;
