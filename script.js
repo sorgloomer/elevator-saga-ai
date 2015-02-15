@@ -15,7 +15,7 @@ def = {
          { type: "r_general" },
          { type: "r_upstream" },
          { type: "r_aid" },
-         { type: "r_aid", prefer_inbound: true },
+         { type: "r_aid", prefer_outbound: true },
          { type: "r_aid", switch_off_indicator_factor: 0.5 }
          ];
          */
@@ -239,7 +239,7 @@ def = {
                 },
                 r_aid: function(el, cf, plan) {
                     if (!plan) {
-                        if (el.myIsFull() || !el.myRole.prefer_inbound) {
+                        if (el.myIsFull() || el.myRole.prefer_outbound) {
                             plan = r_aid_put_them_down(el, cf);
                         }
                     }
