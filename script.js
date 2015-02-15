@@ -449,12 +449,10 @@ def = {
         elevators.forEach(function(el) {
             el.myUpdateIndicators();
             el.myPullPressed();
-            var tag = '', time = self.injector_scope;
+            var tag = '' + el.myRole.type + '\n', time = self.injector_scope;
             el.getPressedFloors().reverse().forEach(function(fn) {
                tag += '' + fn + ': ' + (self.injector_scope.time - el.myPressedTime[fn]).toFixed(1) + '\n';
             });
-            var res = el.myOldestPressed();
-            tag += '_: ' + (res ? res.floorNum : 'null');
             el.$$tag = tag;
         });
 
