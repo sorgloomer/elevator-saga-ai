@@ -404,6 +404,11 @@ def = {
         elevators.forEach(function(el) {
             el.myUpdateIndicators();
             el.myPullPressed();
+            var tag = '', time = self.hege_scope;
+            el.getPressedFloors().reverse().forEach(function(fn) {
+               tag += '' + fn + ': ' + (self.hege_scope.time - el.myPressedTime[fn]).toFixed(2) + '\n';
+            });
+            el.$$tag = tag;
         });
 
     }
