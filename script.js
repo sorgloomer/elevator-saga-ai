@@ -165,15 +165,34 @@ def = {
                 var floor = floors[i];
                 return !el.myIsFull() && floor.myButton(dir) && !floor.myTargeted(dir);
             };
+            var EPSILON = 0.1;
             el.myOldestPressed = function(timeUpperBound) {
+                var cf = el.currentFloor();
                 var res = -1;
                 for (var i = 0; i < floorCount; i++) {
-                    if (el.myPressed[i] && ((timeUpperBound === undefined) || (el.myPressedTime[i] < timeUpperBound))) {
+                    var pt = el.myPressedTime[i];
+                    if (
+                        el.myPressed[i]
+                        &&
+                        (
+                            (timeUpperBound === undefined)
+                            ||
+                            (pt < timeUpperBound - EPSILON)
+                            ||
+                            (
+                                (res >= 0)
+                                &&
+                                (pt < timeUpperBound + EPSILON)
+                                &&
+                                (Math.abs(cf - i) < Math.abs(cf - res))
+                            )
+                        )
+                    ) {
                         res = i;
-                        timeUpperBound = el.myPressedTime[i];
+                        timeUpperBound = pt;
                     }
                 }
-                console.log(res);
+                // console.log(res);
                 return (res >= 0) ? { floorNum: res, time: timeUpperBound } : null;
             };
 
@@ -210,8 +229,8 @@ def = {
                 return null;
             }
             function r_aid_put_them_down(el, cf) {
-                return (el.myPressedOrdered.length > 0)
-                    ? [el.myPressedOrdered.shift()] : null;
+                var res = el.myOldestPressed();
+                return res ? [res.floorNum] : null;
             }
 
             var role_fallback = {
@@ -409,6 +428,8 @@ def = {
             el.getPressedFloors().reverse().forEach(function(fn) {
                tag += '' + fn + ': ' + (self.injector_scope.time - el.myPressedTime[fn]).toFixed(1) + '\n';
             });
+            var res = el.myOldestPressed();
+            tag += '_: ' + (res ? res.floorNum : 'null');
             el.$$tag = tag;
         });
 
